@@ -1,19 +1,17 @@
-﻿using System;
-
-namespace BaCon
+﻿namespace BaCon
 {
-    public class ActionDIEntry<T> : DIResolver<T>
+    public sealed class PostresolvedDIEntry<T> : DIResolver<T>
     {
         private readonly DIContainer container;
-        private readonly Action<DIContainer, T> injectionAction;
         private readonly DIEntry<T> entry;
+        private readonly string tag;
         private bool isResolved;
 
-        public ActionDIEntry(DIContainer container, Action<DIContainer, T> injectionAction, DIEntry<T> entry)
+        public PostresolvedDIEntry(DIContainer container, DIEntry<T> entry, string tag)
         {
             this.container = container;
-            this.injectionAction = injectionAction;
             this.entry = entry;
+            this.tag = tag;
         }
 
         public override T Resolve()
@@ -24,14 +22,14 @@ namespace BaCon
             {
                 if (!isResolved)
                 {
-                    injectionAction(container, resolved);
+                    container.ResolveForInstance(resolved, tag);
                     isResolved = true;                  
                 }
 
                 return resolved;
             }
 
-            injectionAction(container, resolved);
+            container.ResolveForInstance(resolved, tag);
             return resolved;
         }
 
@@ -41,7 +39,7 @@ namespace BaCon
             {
                 entry.NonLazy();
                 var resolved = entry.Resolve();
-                injectionAction(container, resolved);
+                container.ResolveForInstance(resolved, tag);
                 isResolved = true;
             }
         }

@@ -2,12 +2,70 @@
 
 namespace BaCon
 {
+    public abstract class DIEntryBuilder<TCurrent>
+    {
+        protected readonly DIContainer Container;
+        protected string Tag;
+        protected bool IsSingle;
+        protected bool CreateAfterBindings;
+        protected Action<DIContainer, TCurrent> InjectAction;
+        protected DIResolver<TCurrent> Resolver;
+
+        protected DIEntryBuilder(DIContainer container)
+        {
+            Container = container;
+        }
+
+        public DIEntryBuilder<TCurrent> WithInjectionAction(Action<DIContainer, TCurrent> injectAction)
+        {
+            InjectAction = injectAction;
+            return this;
+        }
+
+        public DIEntryBuilder<TCurrent> AsSingle()
+        {
+            IsSingle = true;
+            return this;
+        }
+
+        public DIEntryBuilder<TCurrent> WithTag(string tag)
+        {
+            Tag = tag;
+            return this;
+        }
+
+        public DIEntryBuilder<TCurrent> NonLazy()
+        {
+            CreateAfterBindings = true;
+            return this;
+        }
+
+        public void Bind()
+        {
+            bool hasPostInjectionAction = InjectAction != null;
+
+            if (hasPostInjectionAction)
+                Container.RegisterInjectionMethod(Tag, InjectAction);
+
+            var entry = GetEntry();
+
+            Resolver = !hasPostInjectionAction
+                ? entry
+                : new PostresolvedDIEntry<TCurrent>(Container, entry, Tag);
+
+            var key = DIContainer.GetKey<TCurrent>(Tag);
+            Container.RegisterEntry(Resolver, key, CreateAfterBindings);
+        }
+
+        protected abstract DIEntry<TCurrent> GetEntry();
+    }
+
     public abstract class DIEntryBuilder<TCurrent, TTarget> where TCurrent : TTarget
     {
         protected readonly DIContainer Container;
         protected string Tag;
         protected bool IsSingle;
-        protected bool NoLazy;
+        protected bool CreateAfterBindings;
         protected Action<DIContainer, TCurrent> InjectAction;
         protected DIResolver<TTarget> Resolver;
 
@@ -36,7 +94,7 @@ namespace BaCon
 
         public DIEntryBuilder<TCurrent, TTarget> NonLazy()
         {
-            NoLazy = true;
+            CreateAfterBindings = true;
             return this;
         }
 
@@ -45,22 +103,16 @@ namespace BaCon
             bool hasPostInjectionAction = InjectAction != null;
             
             if (hasPostInjectionAction)
-            {
-                var currentKey = DIContainer.GetKey<TCurrent>(Tag);
-
-                if (Container.HasResolver(currentKey) == false)
-                    Container.RegisterInjectionMethod(Tag, InjectAction);
-            }
+                Container.RegisterInjectionMethod(Tag, InjectAction);
 
             var entry = GetEntry();
 
             Resolver = !hasPostInjectionAction
-                ? new DIResolverDecorator<TTarget, TCurrent>(entry)
-                : new DIResolverDecorator<TTarget, TCurrent>
-                (new ActionDIEntry<TCurrent>(Container, InjectAction, entry));
+                ? new DIResolverAdapter<TTarget, TCurrent>(entry)
+                : new DIResolverAdapter<TTarget, TCurrent>(new PostresolvedDIEntry<TCurrent>(Container, entry, Tag));
 
-            var targetKey = DIContainer.GetKey<TTarget>(Tag);
-            Container.RegisterEntry(Resolver, targetKey, NoLazy);      
+            var key = DIContainer.GetKey<TTarget>(Tag);
+            Container.RegisterEntry(Resolver, key, CreateAfterBindings);      
         }
 
         protected abstract DIEntry<TCurrent> GetEntry();
