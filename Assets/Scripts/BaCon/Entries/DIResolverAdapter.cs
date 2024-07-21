@@ -7,6 +7,8 @@
         public DIResolverAdapter(DIResolver<TCurrent> resolver)
         {
             this.resolver = resolver;
+
+            RegisteredType = resolver.RegisteredType;
         }
 
         public override TTarget Resolve()

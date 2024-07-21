@@ -14,6 +14,8 @@ namespace BaCon
         {
             container = new DIContainer();
 
+            RegisterProjectContext(container);
+
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
 
@@ -21,9 +23,22 @@ namespace BaCon
         }
 
         public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
+        {            
             currentSceneContext = GetSceneContext(scene);
             currentSceneContext.InitContext(container);
+        }
+
+        private void RegisterProjectContext(DIContainer container)
+        {
+            var count = registrators.Length;
+            for (int i = 0; i < count; i++)
+            {
+                DIRegistrator registrator = registrators[i];
+
+                registrator.RegisterEntries(container);
+            }
+
+            container.CompleteRegistration();
         }
 
         private SceneContext GetSceneContext(Scene scene)
@@ -53,6 +68,7 @@ namespace BaCon
             container = null;
             currentSceneContext = null;
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
         }
     }
 }

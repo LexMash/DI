@@ -4,6 +4,7 @@ namespace BaCon
 {
     public abstract class DIEntry : Lazy
     {
+        public Type RegisteredType { get; protected set; }
         public bool IsSingle { get; protected set; }
         protected DIContainer Container { get; }
         
@@ -22,6 +23,8 @@ namespace BaCon
         {
             Factory = factory;
             IsSingle = isSingle;
+
+            RegisteredType = typeof(T);
         }
 
         public DIEntry(T value)

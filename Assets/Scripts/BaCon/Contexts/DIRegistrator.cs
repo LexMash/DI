@@ -5,6 +5,5 @@ namespace BaCon
     public abstract class DIRegistrator : MonoBehaviour
     {
         public abstract void RegisterEntries(IDIContainer container);
-        public abstract void RegisterResolvers(IInstanceInjector injector);
     }
 }

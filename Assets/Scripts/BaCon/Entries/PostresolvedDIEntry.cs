@@ -12,6 +12,8 @@
             this.container = container;
             this.entry = entry;
             this.tag = tag;
+
+            RegisteredType = entry.RegisteredType;
         }
 
         public override T Resolve()

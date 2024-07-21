@@ -17,8 +17,9 @@ namespace BaCon
             {
                 DIRegistrator registrator = registrators[i];
                 registrator.RegisterEntries(container);
-                registrator.RegisterResolvers(container);
             }
+
+            container.CompleteRegistration();
         }
 
         private void OnDestroy()

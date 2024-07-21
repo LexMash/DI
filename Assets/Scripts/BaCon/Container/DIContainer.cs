@@ -4,13 +4,14 @@ using UnityEngine;
 
 namespace BaCon
 {
-    public class DIContainer : IDIContainer, IInstanceInjector, IDisposable
+    public class DIContainer : IDIContainer, IDisposable
     {
         private readonly DIContainer _parentContainer;
-        private readonly Dictionary<(string, Type), DIEntry> _entriesMap = new();
-        private readonly HashSet<(string, Type)> _resolutionsCache = new();
-        private readonly Dictionary<(string, Type), MethodResolver> _resolverMap = new();
-        private readonly Stack<Lazy> _lazyStack = new();
+        private readonly Dictionary<int, DIEntry> _entriesMap = new();
+        private readonly HashSet<int> _resolutionsCache = new();
+        private readonly Dictionary<int, MethodResolver> _resolverMap = new();
+        private readonly Queue<Lazy> _lazyQueue = new();
+        private Queue<IDIEntryBuilder> _buildersQueue = new();
 
         private int registrationRequestsCounter;
 
@@ -19,54 +20,54 @@ namespace BaCon
             _parentContainer = parentContainer;
         }
 
-        public static (string tag, Type) GetKey<T>(string tag) => (tag, typeof(T));
+        public static int GetKey<T>(string tag) 
+            => HashCode.Combine(tag, typeof(T));
 
-        public void RegisterEntry(DIEntry entry, (string, Type) key, bool nonLazy = false)
+        public void RegisterEntry(DIEntry entry, int key, bool nonLazy = false)
         {
             EntriesContainsCheck(key);
 
             _entriesMap[key] = entry;
 
             if (nonLazy)
-                _lazyStack.Push(entry);
-
-            registrationRequestsCounter--;
-
-            if (BindsCompleted())
-                NonLazy();
+                _lazyQueue.Enqueue(entry);
         }
 
         public DIEntryBuilder<TCurrent> Register<TCurrent>(Func<DIContainer, TCurrent> factory = null) where TCurrent : new()
         {
-            registrationRequestsCounter++;
-            return new DIFactoryBuilder<TCurrent>(this, factory);
+            var builder = new DIFactoryBuilder<TCurrent>(this, factory);
+            _buildersQueue.Enqueue(builder);
+            return builder;
         }
 
         public DIEntryBuilder<TCurrent, TTarget> Register<TCurrent, TTarget>(Func<DIContainer, TCurrent> factory = null) where TCurrent : TTarget, new()
         {
-            registrationRequestsCounter++;
-            return new DIFactoryBuilder<TCurrent, TTarget>(this, factory);
+            var builder = new DIFactoryBuilder<TCurrent, TTarget>(this, factory);
+            _buildersQueue.Enqueue(builder);
+            return builder;
         }
 
         public DIEntryBuilder<TCurrent> RegisterInstance<TCurrent>(TCurrent instance)
         {
-            registrationRequestsCounter++;
-            return new DIInstanceBuilder<TCurrent>(this, instance);
+            var builder = new DIInstanceBuilder<TCurrent>(this, instance);
+            _buildersQueue.Enqueue(builder);
+            return builder;
         }
 
         public DIEntryBuilder<TCurrent, TTarget> RegisterInstance<TCurrent, TTarget>(TCurrent instance) where TCurrent : TTarget
         {
-            registrationRequestsCounter++;
-            return new DIInstanceBuilder<TCurrent, TTarget>(this, instance);
+            var builder = new DIInstanceBuilder<TCurrent, TTarget>(this, instance);
+            _buildersQueue.Enqueue(builder);
+            return builder;
         }
 
         public void RegisterInjectionMethod<T>(string tag, Action<DIContainer, T> method)
         {
             var key = GetKey<T>(tag);
 
-            if (HasResolver(key))
+            if (HasInjectionMethod(key))
             {
-                Debug.LogError($"Resolvers already contains resolver with tag {key.Item1} and type {key.Item2.FullName}");
+                Debug.LogError($"Methods already contains method with tag {tag} and type {typeof(T).FullName}");
                 return;
             }
 
@@ -80,13 +81,10 @@ namespace BaCon
 
         public T Resolve<T>(string tag = null)
         {
-            if (!BindsCompleted())
-                Debug.LogWarning("Not all registration requests have been completed");
-
-            var key = (tag, typeof(T));
+            var key = GetKey<T>(tag);
 
             if (_resolutionsCache.Contains(key))
-                throw new Exception($"DI: Cyclic dependency for tag {key.tag} and type {key.Item2.FullName}");
+                throw new Exception($"DI: Cyclic dependency for tag {tag} and type {typeof(T).FullName}");
 
             _resolutionsCache.Add(key);
 
@@ -103,7 +101,7 @@ namespace BaCon
                 _resolutionsCache.Remove(key);
             }
 
-            throw new Exception($"Couldn't find dependency for tag {tag} and type {key.Item2.FullName}");
+            throw new Exception($"Couldn't find dependency for tag {tag} and type {typeof(T).FullName}");
         }
 
         public T ResolveForInstance<T>(T instance, string tag = null)
@@ -115,7 +113,7 @@ namespace BaCon
             return instance;
         }
 
-        public bool HasResolver((string tag, Type) key)
+        public bool HasInjectionMethod(int key)
         {
             return _resolverMap.ContainsKey(key);
         }
@@ -138,34 +136,49 @@ namespace BaCon
             return ResolveForInstance(instance, tag);
         }
 
+        public void CompleteRegistration()
+        {
+            BindAll();
+            NonLazy();
+        }
+
         public void Dispose()
         {
             _entriesMap.Clear();
             _resolverMap.Clear();
-            _lazyStack.Clear();        
+            _lazyQueue.Clear();        
             _resolutionsCache.Clear();
         }
 
-        private bool BindsCompleted() => registrationRequestsCounter == 0;
+        private void BindAll()
+        {
+            while (_buildersQueue.Count > 0)
+            {
+                var builder = _buildersQueue.Dequeue();
+                builder.Bind();
+            }
+
+            _buildersQueue.Clear();
+        }
 
         private void NonLazy()
         {
-            while (_lazyStack.Count > 0)
+            while (_lazyQueue.Count > 0)
             {
-                var entry = _lazyStack.Pop();
+                var entry = _lazyQueue.Dequeue();
                 entry.NonLazy();
             }
 
-            registrationRequestsCounter = 0;
+            _lazyQueue.Clear();
         }
 
-        private void EntriesContainsCheck((string tag, Type) key)
+        private void EntriesContainsCheck(int key)
         {
             if (_entriesMap.TryGetValue(key, out DIEntry existed))
-                throw new Exception($"Entry with this key {key.Item1} {key.Item2.Name}");
+                throw new Exception($"Entry with this key {key} {existed.RegisteredType.Name}");
         }
 
-        private MethodResolver<T> GetResolver<T>((string, Type) key)
+        private MethodResolver<T> GetResolver<T>(int key)
         {
             MethodResolver<T> resolver = null;
 
@@ -174,7 +187,7 @@ namespace BaCon
                 resolver = (MethodResolver<T>)registered;
             }
             else
-                throw new Exception($"Couldn't find resolver for tag {key.Item1} and type {key.Item2.FullName}");
+                throw new Exception($"Couldn't find resolver for tag {key} and type {typeof(T).FullName}");
 
             return resolver;
         }

@@ -13,18 +13,18 @@ namespace Assets.Scripts
 
             var container = new DIContainer();
 
-            container.Register<TestClass2>().WithTag("aaa").Bind();
+            container.Register<TestClass2>().WithTag("aaa");
 
             container.RegisterInjectionMethod<TestClass2>((c, i) => i.Set("injected test2"));
             container.RegisterInjectionMethod<MonoTestObject>((c, i) => i.Construct());
 
             container.RegisterInstance<TestClass1, ITestClass1>(new TestClass1())
-                .WithInjectionAction((c,i) => Debug.Log("uahahah"))
+                .WithInjectionAction((c, i) => Debug.Log("uahahah"))
                 .AsSingle()
                 .WithTag("aaa")
-                .NonLazy()
-                .Bind();
+                .NonLazy();
 
+            container.CompleteRegistration();
             //var test2 = container.Resolve<TestClass2>("aaa");
             //container.ResolveForInstance(test2);
             container.InstantiateAndResolve(MonoTestObject);
@@ -38,11 +38,22 @@ namespace Assets.Scripts
     {
         protected string name = "class1";
         public string Name => name;
+
+        public TestClass1()
+        {
+        }
+
+        public void SetInterface(ITestClass1 testClassI)
+        {
+            Debug.Log(testClassI.Name);
+        }
     }
+
     public interface ITestClass1
     {
         string Name { get; }
     }
+
     public class TestClass2 : TestClass1
     {
         public TestClass2()

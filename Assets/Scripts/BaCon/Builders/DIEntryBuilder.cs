@@ -2,7 +2,7 @@
 
 namespace BaCon
 {
-    public abstract class DIEntryBuilder<TCurrent>
+    public abstract class DIEntryBuilder<TCurrent> : IDIEntryBuilder
     {
         protected readonly DIContainer Container;
         protected string Tag;
@@ -40,7 +40,7 @@ namespace BaCon
             return this;
         }
 
-        public void Bind()
+        void IDIEntryBuilder.Bind()
         {
             bool hasPostInjectionAction = InjectAction != null;
 
@@ -60,7 +60,7 @@ namespace BaCon
         protected abstract DIEntry<TCurrent> GetEntry();
     }
 
-    public abstract class DIEntryBuilder<TCurrent, TTarget> where TCurrent : TTarget
+    public abstract class DIEntryBuilder<TCurrent, TTarget> : IDIEntryBuilder where TCurrent : TTarget
     {
         protected readonly DIContainer Container;
         protected string Tag;
@@ -98,7 +98,7 @@ namespace BaCon
             return this;
         }
 
-        public void Bind()
+        void IDIEntryBuilder.Bind()
         {                        
             bool hasPostInjectionAction = InjectAction != null;
             
