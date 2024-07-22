@@ -23,7 +23,7 @@ binder.BindInstance<Foo, IFoo>(new Foo());
 
 ### Factory registration
 ```csharp
-binder.Bind<InstanceType>(Func(IDIResolver, newInstance) factory);
+binder.Bind<TargetType or InstanceType>(Func(IDIResolver, newInstance) factory);
 binder.Bind<Foo>((resolver) => new Foo(resolver.Resolve<FooDependency>());
 
 binder.Bind<InstanceType, TargetType>(Func(IDIResolver, newInstance) factory);
