@@ -113,11 +113,6 @@ namespace BaCon
             return instance;
         }
 
-        public bool HasInjectionMethod(int key)
-        {
-            return _resolverMap.ContainsKey(key);
-        }
-
         public T InstantiateAndResolve<T>(GameObject prefab, string tag = null)
         {
             var instance = GameObject.Instantiate(prefab).GetComponent<T>();
@@ -136,7 +131,7 @@ namespace BaCon
             return ResolveForInstance(instance, tag);
         }
 
-        public void CompleteRegistration()
+        public void BuildDomain()
         {
             BindAll();
             NonLazy();
@@ -148,6 +143,11 @@ namespace BaCon
             _resolverMap.Clear();
             _lazyQueue.Clear();
             _resolutionsCache.Clear();
+        }
+
+        private bool HasInjectionMethod(int key)
+        {
+            return _resolverMap.ContainsKey(key);
         }
 
         private void BindAll()

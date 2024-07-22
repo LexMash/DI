@@ -2,7 +2,7 @@
 
 namespace BaCon
 {
-    public interface IDIBinder : IInstanceInjector
+    public interface IDIBinder : IDIMethodBinder
     {
         DIEntryBuilder<TCurrent> Bind<TCurrent>(Func<IDIResolver, TCurrent> factory = null) where TCurrent : new();
         DIEntryBuilder<TCurrent, TTarget> Bind<TCurrent, TTarget>(Func<IDIResolver, TCurrent> factory = null) where TCurrent : TTarget, new();

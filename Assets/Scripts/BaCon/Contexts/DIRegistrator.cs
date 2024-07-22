@@ -4,6 +4,6 @@ namespace BaCon
 {
     public abstract class DIRegistrator : MonoBehaviour
     {
-        public abstract void RegisterEntries(IDIBinder container);
+        public abstract void BindEntries(IDIBinder container);
     }
 }

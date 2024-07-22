@@ -24,7 +24,7 @@ namespace Assets.Scripts
                 .WithTag("aaa")
                 .NonLazy();
 
-            container.CompleteRegistration();
+            container.BuildDomain();
             //var test2 = container.Resolve<TestClass2>("aaa");
             //container.ResolveForInstance(test2);
             container.InstantiateAndResolve(MonoTestObject);
@@ -43,7 +43,7 @@ namespace Assets.Scripts
         {
         }
 
-        public void SetInterface(ITestClass1 testClassI)
+        public void SetDepenecy(ITestClass1 testClassI)
         {
             Debug.Log(testClassI.Name);
         }

@@ -35,10 +35,10 @@ namespace BaCon
             {
                 DIRegistrator registrator = registrators[i];
 
-                registrator.RegisterEntries(container);
+                registrator.BindEntries(container);
             }
 
-            container.CompleteRegistration();
+            container.BuildDomain();
         }
 
         private SceneContext GetSceneContext(Scene scene)
