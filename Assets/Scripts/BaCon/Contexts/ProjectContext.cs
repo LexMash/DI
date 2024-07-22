@@ -5,7 +5,7 @@ namespace BaCon
 {
     public class ProjectContext : MonoBehaviour
     {
-        [SerializeField] private DIRegistrator[] registrators;
+        [SerializeField] private DIInstaller[] registrators;
 
         private DIContainer container;
         private SceneContext currentSceneContext;
@@ -33,9 +33,9 @@ namespace BaCon
             var count = registrators.Length;
             for (int i = 0; i < count; i++)
             {
-                DIRegistrator registrator = registrators[i];
+                DIInstaller registrator = registrators[i];
 
-                registrator.BindEntries(container);
+                registrator.InstallBindings(container);
             }
 
             container.BuildDomain();

@@ -2,11 +2,11 @@ using Assets.Scripts;
 using BaCon;
 using UnityEngine;
 
-public class TestDIRegistrator : DIRegistrator
+public class TestDIRegistrator : DIInstaller
 {
     [SerializeField] private MonoTestObject monoTestObject;
 
-    public override void BindEntries(IDIBinder binder)
+    public override void InstallBindings(IDIBinder binder)
     {
         binder.Bind<TestClass1>()
             .WithInjectionAction((resolver, instance) => instance.SetDepenecy(resolver.Resolve<ITestClass1>()))

@@ -4,7 +4,7 @@ namespace BaCon
 {
     public class SceneContext : MonoBehaviour
     {
-        [SerializeField] private DIRegistrator[] registrators;
+        [SerializeField] private DIInstaller[] registrators;
 
         private DIContainer container;
 
@@ -15,8 +15,8 @@ namespace BaCon
             var count = registrators.Length;
             for (int i = 0; i < count; i++)
             {
-                DIRegistrator registrator = registrators[i];
-                registrator.BindEntries(container);
+                DIInstaller registrator = registrators[i];
+                registrator.InstallBindings(container);
             }
 
             container.BuildDomain();
