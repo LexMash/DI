@@ -10,7 +10,7 @@ namespace BaCon
 
         public void InitContext(DIContainer container)
         {
-            container = new DIContainer(container);
+            this.container = new DIContainer(container);
 
             var count = registrators.Length;
             for (int i = 0; i < count; i++)

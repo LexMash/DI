@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace BaCon
 {
-    public class DIContainer : IDIContainer, IDisposable
+    public class DIContainer : IDIBinder, IDIResolver, IDisposable
     {
         private readonly DIContainer _parentContainer;
         private readonly Dictionary<int, DIEntry> _entriesMap = new();
@@ -20,7 +20,7 @@ namespace BaCon
             _parentContainer = parentContainer;
         }
 
-        public static int GetKey<T>(string tag) 
+        public static int GetKey<T>(string tag)
             => HashCode.Combine(tag, typeof(T));
 
         public void RegisterEntry(DIEntry entry, int key, bool nonLazy = false)
@@ -33,35 +33,35 @@ namespace BaCon
                 _lazyQueue.Enqueue(entry);
         }
 
-        public DIEntryBuilder<TCurrent> Register<TCurrent>(Func<DIContainer, TCurrent> factory = null) where TCurrent : new()
+        public DIEntryBuilder<TCurrent> Bind<TCurrent>(Func<IDIResolver, TCurrent> factory = null) where TCurrent : new()
         {
             var builder = new DIFactoryBuilder<TCurrent>(this, factory);
             _buildersQueue.Enqueue(builder);
             return builder;
         }
 
-        public DIEntryBuilder<TCurrent, TTarget> Register<TCurrent, TTarget>(Func<DIContainer, TCurrent> factory = null) where TCurrent : TTarget, new()
+        public DIEntryBuilder<TCurrent, TTarget> Bind<TCurrent, TTarget>(Func<IDIResolver, TCurrent> factory = null) where TCurrent : TTarget, new()
         {
             var builder = new DIFactoryBuilder<TCurrent, TTarget>(this, factory);
             _buildersQueue.Enqueue(builder);
             return builder;
         }
 
-        public DIEntryBuilder<TCurrent> RegisterInstance<TCurrent>(TCurrent instance)
+        public DIEntryBuilder<TCurrent> BindInstance<TCurrent>(TCurrent instance)
         {
             var builder = new DIInstanceBuilder<TCurrent>(this, instance);
             _buildersQueue.Enqueue(builder);
             return builder;
         }
 
-        public DIEntryBuilder<TCurrent, TTarget> RegisterInstance<TCurrent, TTarget>(TCurrent instance) where TCurrent : TTarget
+        public DIEntryBuilder<TCurrent, TTarget> BindInstance<TCurrent, TTarget>(TCurrent instance) where TCurrent : TTarget
         {
             var builder = new DIInstanceBuilder<TCurrent, TTarget>(this, instance);
             _buildersQueue.Enqueue(builder);
             return builder;
         }
 
-        public void RegisterInjectionMethod<T>(string tag, Action<DIContainer, T> method)
+        public void BindInjectionMethod<T>(string tag, Action<IDIResolver, T> method)
         {
             var key = GetKey<T>(tag);
 
@@ -74,9 +74,9 @@ namespace BaCon
             _resolverMap[key] = new MethodResolver<T>(this, method);
         }
 
-        public void RegisterInjectionMethod<T>(Action<DIContainer, T> method)
+        public void BindInjectionMethod<T>(Action<IDIResolver, T> method)
         {
-            RegisterInjectionMethod(null, method);
+            BindInjectionMethod(null, method);
         }
 
         public T Resolve<T>(string tag = null)
@@ -146,7 +146,7 @@ namespace BaCon
         {
             _entriesMap.Clear();
             _resolverMap.Clear();
-            _lazyQueue.Clear();        
+            _lazyQueue.Clear();
             _resolutionsCache.Clear();
         }
 

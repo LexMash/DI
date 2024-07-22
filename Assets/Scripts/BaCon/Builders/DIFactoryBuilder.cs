@@ -4,9 +4,9 @@ namespace BaCon
 {
     public sealed class DIFactoryBuilder<TCurrent> : DIEntryBuilder<TCurrent> where TCurrent : new()
     {
-        private readonly Func<DIContainer, TCurrent> factory;
+        private readonly Func<IDIResolver, TCurrent> factory;
 
-        public DIFactoryBuilder(DIContainer container, Func<DIContainer, TCurrent> factory) : base(container)
+        public DIFactoryBuilder(DIContainer container, Func<IDIResolver, TCurrent> factory) : base(container)
         {
             this.factory = factory ??= (c) => new();
         }
@@ -18,9 +18,9 @@ namespace BaCon
 
     public sealed class DIFactoryBuilder<TCurrent, TTarget> : DIEntryBuilder<TCurrent, TTarget> where TCurrent : TTarget, new()
     {
-        private readonly Func<DIContainer, TCurrent> factory;
+        private readonly Func<IDIResolver, TCurrent> factory;
 
-        public DIFactoryBuilder(DIContainer container, Func<DIContainer, TCurrent> factory) : base(container)
+        public DIFactoryBuilder(DIContainer container, Func<IDIResolver, TCurrent> factory) : base(container)
         {
             this.factory = factory ??= (c) => new();
         }

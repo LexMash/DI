@@ -8,7 +8,7 @@ namespace BaCon
         protected string Tag;
         protected bool IsSingle;
         protected bool CreateAfterBindings;
-        protected Action<DIContainer, TCurrent> InjectAction;
+        protected Action<IDIResolver, TCurrent> InjectAction;
         protected DIResolver<TCurrent> Resolver;
 
         protected DIEntryBuilder(DIContainer container)
@@ -16,7 +16,7 @@ namespace BaCon
             Container = container;
         }
 
-        public DIEntryBuilder<TCurrent> WithInjectionAction(Action<DIContainer, TCurrent> injectAction)
+        public DIEntryBuilder<TCurrent> WithInjectionAction(Action<IDIResolver, TCurrent> injectAction)
         {
             InjectAction = injectAction;
             return this;
@@ -45,7 +45,7 @@ namespace BaCon
             bool hasPostInjectionAction = InjectAction != null;
 
             if (hasPostInjectionAction)
-                Container.RegisterInjectionMethod(Tag, InjectAction);
+                Container.BindInjectionMethod(Tag, InjectAction);
 
             var entry = GetEntry();
 
@@ -66,7 +66,7 @@ namespace BaCon
         protected string Tag;
         protected bool IsSingle;
         protected bool CreateAfterBindings;
-        protected Action<DIContainer, TCurrent> InjectAction;
+        protected Action<IDIResolver, TCurrent> InjectAction;
         protected DIResolver<TTarget> Resolver;
 
         protected DIEntryBuilder(DIContainer container)
@@ -74,7 +74,7 @@ namespace BaCon
             Container = container;
         }
 
-        public DIEntryBuilder<TCurrent, TTarget> WithInjectionAction(Action<DIContainer, TCurrent> injectAction)
+        public DIEntryBuilder<TCurrent, TTarget> WithInjectionAction(Action<IDIResolver, TCurrent> injectAction)
         {
             InjectAction = injectAction;
             return this;
@@ -103,7 +103,7 @@ namespace BaCon
             bool hasPostInjectionAction = InjectAction != null;
             
             if (hasPostInjectionAction)
-                Container.RegisterInjectionMethod(Tag, InjectAction);
+                Container.BindInjectionMethod(Tag, InjectAction);
 
             var entry = GetEntry();
 

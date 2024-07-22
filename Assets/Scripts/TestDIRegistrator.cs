@@ -6,13 +6,13 @@ public class TestDIRegistrator : DIRegistrator
 {
     [SerializeField] private MonoTestObject monoTestObject;
 
-    public override void RegisterEntries(IDIContainer container)
+    public override void RegisterEntries(IDIBinder binder)
     {
-        container.Register<TestClass1>().WithInjectionAction((c,i) => i.SetInterface(c.Resolve<ITestClass1>())).WithTag("aaa");
+        binder.Bind<TestClass1>().WithInjectionAction((r,i) => i.SetInterface(r.Resolve<ITestClass1>())).WithTag("aaa");
 
-        container.RegisterInstance(monoTestObject).WithInjectionAction((c, i) => i.Construct()).NonLazy();
+        binder.BindInstance(monoTestObject).WithInjectionAction((c, i) => i.Construct()).NonLazy();
 
-        container.RegisterInstance<TestClass2, ITestClass1>(new TestClass2())
+        binder.BindInstance<TestClass2, ITestClass1>(new TestClass2())
             .WithInjectionAction((c, i) => Debug.Log("uahahah"))
             .AsSingle()
             .WithTag("aaa")

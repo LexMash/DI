@@ -13,12 +13,12 @@ namespace Assets.Scripts
 
             var container = new DIContainer();
 
-            container.Register<TestClass2>().WithTag("aaa");
+            container.Bind<TestClass2>().WithTag("aaa");
 
-            container.RegisterInjectionMethod<TestClass2>((c, i) => i.Set("injected test2"));
-            container.RegisterInjectionMethod<MonoTestObject>((c, i) => i.Construct());
+            container.BindInjectionMethod<TestClass2>((c, i) => i.Set("injected test2"));
+            container.BindInjectionMethod<MonoTestObject>((c, i) => i.Construct());
 
-            container.RegisterInstance<TestClass1, ITestClass1>(new TestClass1())
+            container.BindInstance<TestClass1, ITestClass1>(new TestClass1())
                 .WithInjectionAction((c, i) => Debug.Log("uahahah"))
                 .AsSingle()
                 .WithTag("aaa")

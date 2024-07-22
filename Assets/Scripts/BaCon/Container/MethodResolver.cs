@@ -19,9 +19,9 @@ namespace BaCon
 
     public class MethodResolver<T> : MethodResolver
     {
-        private readonly Action<DIContainer, T> process;
+        private readonly Action<IDIResolver, T> process;
 
-        public MethodResolver(DIContainer container, Action<DIContainer, T> process) : base(container)
+        public MethodResolver(DIContainer container, Action<IDIResolver, T> process) : base(container)
         {
             this.process = process;
         }
