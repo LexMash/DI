@@ -7,13 +7,15 @@ namespace BaCon
     public class DIContainer : IDIBinder, IDIResolver, IDisposable
     {
         private readonly DIContainer _parentContainer;
+
         private readonly Dictionary<int, DIEntry> _entriesMap = new();
-        private readonly HashSet<int> _resolutionsCache = new();
         private readonly Dictionary<int, MethodResolver> _resolverMap = new();
+        private readonly Dictionary<Type, List<int>> _cashedKeysMap = new();
+        private readonly List<IDisposable> _disposables = new();
+
+        private readonly HashSet<int> _resolutionsCache = new();      
         private readonly Queue<Lazy> _lazyQueue = new();
         private Queue<IDIEntryBuilder> _buildersQueue = new();
-
-        private int registrationRequestsCounter;
 
         public DIContainer(DIContainer parentContainer = null)
         {
@@ -23,7 +25,7 @@ namespace BaCon
         public static int GetKey<T>(string tag)
             => HashCode.Combine(tag, typeof(T));
 
-        public void RegisterEntry(DIEntry entry, int key, bool nonLazy = false)
+        public void RegisterEntry(DIEntry entry, int key, bool nonLazy, bool asCashed)
         {
             EntriesContainsCheck(key);
 
@@ -31,6 +33,9 @@ namespace BaCon
 
             if (nonLazy)
                 _lazyQueue.Enqueue(entry);
+
+            if (asCashed)
+                AddCashed(entry.RegisteredType, key);
         }
 
         public DIEntryBuilder<TCurrent> Bind<TCurrent>(Func<IDIResolver, TCurrent> factory = null) where TCurrent : new()
@@ -91,7 +96,13 @@ namespace BaCon
             try
             {
                 if (_entriesMap.TryGetValue(key, out var diEntry))
-                    return diEntry.Resolve<T>();
+                {
+                    T resolved = diEntry.Resolve<T>();
+
+                    TryAddToDisposable(diEntry.IsSingle, resolved);
+
+                    return resolved;
+                }
 
                 if (_parentContainer != null)
                     return _parentContainer.Resolve<T>(tag);
@@ -102,6 +113,43 @@ namespace BaCon
             }
 
             throw new Exception($"Couldn't find dependency for tag {tag} and type {typeof(T).FullName}");
+        }
+
+        public IReadOnlyList<T> ResolveAll<T>()
+        {
+            var type = typeof(T);
+            
+            if (!_cashedKeysMap.TryGetValue(type, out List<int> cashedKeys))
+                throw new TypeAccessException($"Collection of {type.FullName} not exists in cashed base");
+
+            var all = new List<T>();
+            var count = cashedKeys.Count;
+
+            for ( int i = 0; i < count; i++)
+            {
+                var key = cashedKeys[i];
+
+                if (_resolutionsCache.Contains(key))
+                    throw new Exception($"DI: Cyclic dependency for index {i} in cashed for type {type.FullName}. Check your cashed registrations");
+
+                _resolutionsCache.Add(key);
+
+                var entry = _entriesMap[key];
+                var instance = entry.Resolve<T>();
+                all.Add(instance);
+
+                TryAddToDisposable(entry.IsSingle, instance);
+
+                _resolutionsCache.Remove(key);
+            }
+
+            if (_parentContainer != null) //или ограничиться текущим контекстом?
+            {
+                all.AddRange(_parentContainer.ResolveAll<T>());
+                return all;
+            }
+
+            return all;
         }
 
         public T ResolveForInstance<T>(T instance, string tag = null)
@@ -116,18 +164,16 @@ namespace BaCon
         public T InstantiateAndResolve<T>(GameObject prefab, string tag = null)
         {
             var instance = GameObject.Instantiate(prefab).GetComponent<T>();
+
+            if (instance == null)
+                throw new MissingComponentException($"Prefab {prefab.name} not contains component with type {typeof(T)}");
+
             return ResolveForInstance(instance, tag);
         }
 
         public T InstantiateAndResolve<T>(T prefab, string tag = null) where T : MonoBehaviour
         {
             var instance = GameObject.Instantiate(prefab);
-            return ResolveForInstance(instance, tag);
-        }
-
-        public T InstantiateAndResolve<T>(string tag = null) where T : new()
-        {
-            T instance = new();
             return ResolveForInstance(instance, tag);
         }
 
@@ -141,14 +187,21 @@ namespace BaCon
         {
             _entriesMap.Clear();
             _resolverMap.Clear();
+            
+            foreach(var cashed in _cashedKeysMap.Values)
+                cashed.Clear();
+            _cashedKeysMap.Clear();
+
             _lazyQueue.Clear();
             _resolutionsCache.Clear();
+
+            foreach (var disposable in _disposables)
+                disposable.Dispose();
+            _disposables.Clear();
         }
 
-        private bool HasInjectionMethod(int key)
-        {
-            return _resolverMap.ContainsKey(key);
-        }
+        private bool HasInjectionMethod(int key) 
+            => _resolverMap.ContainsKey(key);
 
         private void BindAll()
         {
@@ -170,6 +223,37 @@ namespace BaCon
             }
 
             _lazyQueue.Clear();
+        }
+
+        private bool TryAddToDisposable<T>(bool isSingle, T resolved)
+        {
+            if (isSingle && resolved is IDisposable)
+            {
+                var disposable = resolved as IDisposable;
+
+                if (!_disposables.Contains(disposable))
+                {
+                    _disposables.Add(disposable);
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void AddCashed(Type type, int key)
+        {
+            if (_cashedKeysMap.TryGetValue(type, out var keys))
+            {
+                //for test
+                if (keys.Contains(key))
+                    throw new InvalidOperationException($"Key {key} already registred in chased list for type {type.FullName}");
+
+                keys.Add(key);
+            }
+            else
+                _cashedKeysMap[type] = new List<int> { key };
         }
 
         private void EntriesContainsCheck(int key)

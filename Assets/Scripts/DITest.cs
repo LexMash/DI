@@ -11,27 +11,25 @@ namespace Assets.Scripts
         {
             var test1 = new TestClass1();
 
-            var container = new DIContainer();
+            var binder = new DIContainer();
 
-            container.Bind<TestClass2>().WithTag("aaa");
+            binder.Bind<TestClass2>().WithTag("aaa");
 
-            container.BindInjectionMethod<TestClass2>((c, i) => i.Set("injected test2"));
-            container.BindInjectionMethod<MonoTestObject>((c, i) => i.Construct());
+            binder.BindInjectionMethod<TestClass2>((r, i) => i.Set("injected test2"));
+            binder.BindInjectionMethod<MonoTestObject>((r, i) => i.Construct());
 
-            container.BindInstance<TestClass1, ITestClass1>(new TestClass1())
+            binder.BindInstance<TestClass1, ITestClass1>(new TestClass1())
                 .WithInjectionAction((c, i) => Debug.Log("uahahah"))
                 .AsSingle()
                 .WithTag("aaa")
                 .NonLazy();
 
-            container.BuildDomain();
+            binder.BuildDomain();
             //var test2 = container.Resolve<TestClass2>("aaa");
             //container.ResolveForInstance(test2);
-            container.InstantiateAndResolve(MonoTestObject);
-            var test2 = container.InstantiateAndResolve<TestClass2>();
+            binder.InstantiateAndResolve(MonoTestObject);
 
-            Debug.Log(test2.Name);
-            Debug.Log(container.Resolve<ITestClass1>("aaa").Name);
+            Debug.Log(binder.Resolve<ITestClass1>("aaa").Name);
         }
     }
     public class TestClass1 : ITestClass1

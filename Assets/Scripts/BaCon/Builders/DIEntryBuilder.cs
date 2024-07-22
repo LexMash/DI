@@ -7,9 +7,10 @@ namespace BaCon
         protected readonly DIContainer Container;
         protected string Tag;
         protected bool IsSingle;
+        protected bool IsCashed;
         protected bool CreateAfterBindings;
         protected Action<IDIResolver, TCurrent> InjectAction;
-        protected DIResolver<TCurrent> Resolver;
+        protected DIEntryResolver<TCurrent> Resolver;
 
         protected DIEntryBuilder(DIContainer container)
         {
@@ -25,6 +26,13 @@ namespace BaCon
         public DIEntryBuilder<TCurrent> AsSingle()
         {
             IsSingle = true;
+            return this;
+        }
+
+        public DIEntryBuilder<TCurrent> AsCashed()
+        {
+            IsSingle = true;
+            IsCashed = true;
             return this;
         }
 
@@ -51,10 +59,10 @@ namespace BaCon
 
             Resolver = !hasPostInjectionAction
                 ? entry
-                : new PostresolvedDIEntry<TCurrent>(Container, entry, Tag);
+                : new DIEntryPostresolved<TCurrent>(Container, entry, Tag);
 
             var key = DIContainer.GetKey<TCurrent>(Tag);
-            Container.RegisterEntry(Resolver, key, CreateAfterBindings);
+            Container.RegisterEntry(Resolver, key, CreateAfterBindings, IsCashed);
         }
 
         protected abstract DIEntry<TCurrent> GetEntry();
@@ -65,9 +73,10 @@ namespace BaCon
         protected readonly DIContainer Container;
         protected string Tag;
         protected bool IsSingle;
+        private bool IsCashed;
         protected bool CreateAfterBindings;
         protected Action<IDIResolver, TCurrent> InjectAction;
-        protected DIResolver<TTarget> Resolver;
+        protected DIEntryResolver<TTarget> Resolver;
 
         protected DIEntryBuilder(DIContainer container)
         {
@@ -83,6 +92,13 @@ namespace BaCon
         public DIEntryBuilder<TCurrent, TTarget> AsSingle()
         {
             IsSingle = true;
+            return this;
+        }
+
+        public DIEntryBuilder<TCurrent, TTarget> AsCashed()
+        {
+            IsSingle = true;
+            IsCashed = true;
             return this;
         }
 
@@ -108,11 +124,11 @@ namespace BaCon
             var entry = GetEntry();
 
             Resolver = !hasPostInjectionAction
-                ? new DIResolverAdapter<TTarget, TCurrent>(entry)
-                : new DIResolverAdapter<TTarget, TCurrent>(new PostresolvedDIEntry<TCurrent>(Container, entry, Tag));
+                ? new DIEntryResolverAdapter<TTarget, TCurrent>(entry)
+                : new DIEntryResolverAdapter<TTarget, TCurrent>(new DIEntryPostresolved<TCurrent>(Container, entry, Tag));
 
             var key = DIContainer.GetKey<TTarget>(Tag);
-            Container.RegisterEntry(Resolver, key, CreateAfterBindings);      
+            Container.RegisterEntry(Resolver, key, CreateAfterBindings, IsCashed);      
         }
 
         protected abstract DIEntry<TCurrent> GetEntry();

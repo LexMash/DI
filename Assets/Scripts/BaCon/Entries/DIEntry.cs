@@ -10,11 +10,11 @@ namespace BaCon
         
         public T Resolve<T>()
         {
-            return ((DIResolver<T>)this).Resolve();
+            return ((DIEntryResolver<T>)this).Resolve();
         }
     }
 
-    public class DIEntry<T> : DIResolver<T>
+    public class DIEntry<T> : DIEntryResolver<T>
     {
         private Func<DIContainer, T> Factory { get; }
         private T _instance;

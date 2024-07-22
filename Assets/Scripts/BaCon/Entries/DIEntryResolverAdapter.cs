@@ -1,10 +1,10 @@
 ﻿namespace BaCon
 {
-    public sealed class DIResolverAdapter<TTarget, TCurrent> : DIResolver<TTarget> where TCurrent : TTarget
+    public sealed class DIEntryResolverAdapter<TTarget, TCurrent> : DIEntryResolver<TTarget> where TCurrent : TTarget
     {
-        private readonly DIResolver<TCurrent> resolver;
+        private readonly DIEntryResolver<TCurrent> resolver;
 
-        public DIResolverAdapter(DIResolver<TCurrent> resolver)
+        public DIEntryResolverAdapter(DIEntryResolver<TCurrent> resolver)
         {
             this.resolver = resolver;
 

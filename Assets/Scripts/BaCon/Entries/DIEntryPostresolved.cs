@@ -1,13 +1,13 @@
 ﻿namespace BaCon
 {
-    public sealed class PostresolvedDIEntry<T> : DIResolver<T>
+    public sealed class DIEntryPostresolved<T> : DIEntryResolver<T>
     {
         private readonly DIContainer container;
         private readonly DIEntry<T> entry;
         private readonly string tag;
         private bool isResolved;
 
-        public PostresolvedDIEntry(DIContainer container, DIEntry<T> entry, string tag)
+        public DIEntryPostresolved(DIContainer container, DIEntry<T> entry, string tag)
         {
             this.container = container;
             this.entry = entry;

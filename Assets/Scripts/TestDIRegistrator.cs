@@ -21,5 +21,7 @@ public class TestDIRegistrator : DIInstaller
             .AsSingle()
             .WithTag("aaa")
             .NonLazy();
+
+        var test = new Test();
     }
 }
