@@ -38,7 +38,7 @@ namespace BaCon
                 registrator.InstallBindings(container);
             }
 
-            container.BuildDomain();
+            container.BuildContext();
         }
 
         private SceneContext GetSceneContext(Scene scene)

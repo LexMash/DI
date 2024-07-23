@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace BaCon
 {
+
     public class DIContainer : IDIBinder, IDIResolver, IDisposable
     {
         private readonly DIContainer _parentContainer;
@@ -11,7 +12,7 @@ namespace BaCon
         private readonly Dictionary<int, DIEntry> _entriesMap = new();
         private readonly Dictionary<int, MethodResolver> _resolverMap = new();
         private readonly Dictionary<Type, List<int>> _cashedKeysMap = new();
-        private readonly List<IDisposable> _disposables = new();
+        private readonly Stack<IDisposable> _disposables = new();
 
         private readonly HashSet<int> _resolutionsCache = new();      
         private readonly Queue<Lazy> _lazyQueue = new();
@@ -24,6 +25,9 @@ namespace BaCon
 
         public static int GetKey<T>(string tag)
             => HashCode.Combine(tag, typeof(T));
+
+        public static int GetKey(string tag, Type type) 
+            => HashCode.Combine(tag, type);
 
         public void RegisterEntry(DIEntry entry, int key, bool nonLazy, bool asCashed)
         {
@@ -99,7 +103,8 @@ namespace BaCon
                 {
                     T resolved = diEntry.Resolve<T>();
 
-                    TryAddToDisposable(diEntry.IsSingle, resolved);
+                    if(diEntry.IsSingle)
+                        TryAddToDisposable(resolved);
 
                     return resolved;
                 }
@@ -138,7 +143,8 @@ namespace BaCon
                 var instance = entry.Resolve<T>();
                 all.Add(instance);
 
-                TryAddToDisposable(entry.IsSingle, instance);
+                if (entry.IsSingle)
+                    TryAddToDisposable(instance);
 
                 _resolutionsCache.Remove(key);
             }
@@ -161,6 +167,25 @@ namespace BaCon
             return instance;
         }
 
+#if UNITY_2017_3_OR_NEWER && NET_4_6
+        public void ResolveAllHierarchy<T>(T instance) where T : MonoBehaviour
+        {
+            ResolveAllHierarchy(instance.gameObject);
+        }
+
+        public void ResolveAllHierarchy(GameObject gameObject)
+        {
+            var children = gameObject.GetComponentsInChildren<IInjectable>();
+            var count = children.Length;
+
+            for (int i = 0; i < count; i++)
+            {
+                IInjectable child = children[i];
+                ResolveForInstance(child);
+            }
+        }
+#endif
+
         public T InstantiateAndResolve<T>(GameObject prefab, string tag = null)
         {
             var instance = GameObject.Instantiate(prefab).GetComponent<T>();
@@ -177,7 +202,7 @@ namespace BaCon
             return ResolveForInstance(instance, tag);
         }
 
-        public void BuildDomain()
+        public void BuildContext()
         {
             BindAll();
             NonLazy();
@@ -195,8 +220,12 @@ namespace BaCon
             _lazyQueue.Clear();
             _resolutionsCache.Clear();
 
-            foreach (var disposable in _disposables)
+            var count = _disposables.Count;
+            while(_disposables.Count > 0)
+            {
+                IDisposable disposable = _disposables.Pop();
                 disposable.Dispose();
+            }
             _disposables.Clear();
         }
 
@@ -225,18 +254,22 @@ namespace BaCon
             _lazyQueue.Clear();
         }
 
-        private bool TryAddToDisposable<T>(bool isSingle, T resolved)
+#if UNITY_2017_3_OR_NEWER && NET_4_6
+        private void ResolveForInstance(IInjectable injectable)
         {
-            if (isSingle && resolved is IDisposable)
+            ResolveForInstance((dynamic)injectable, injectable.Tag);
+        }
+#endif
+
+        private bool TryAddToDisposable<T>(T instance)
+        {
+            var disposable = instance as IDisposable;
+
+            if (disposable != null && !_disposables.Contains(disposable))
             {
-                var disposable = resolved as IDisposable;
+                _disposables.Push(disposable);
 
-                if (!_disposables.Contains(disposable))
-                {
-                    _disposables.Add(disposable);
-
-                    return true;
-                }
+                return true;
             }
 
             return false;

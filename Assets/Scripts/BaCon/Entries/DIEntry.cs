@@ -2,6 +2,17 @@
 
 namespace BaCon
 {
+
+#if UNITY_2017_3_OR_NEWER && NET_4_6
+    /// <summary>
+    /// Interface ONLY for deriving MonoBehaviour classes and injecting into its entire hierarchy.
+    /// </summary>
+    public interface IInjectable
+    {
+        public string Tag { get; }
+    }
+#endif
+
     public abstract class DIEntry : Lazy
     {
         public Type RegisteredType { get; protected set; }

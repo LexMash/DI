@@ -19,7 +19,7 @@ namespace BaCon
                 registrator.InstallBindings(container);
             }
 
-            container.BuildDomain();
+            container.BuildContext();
         }
 
         private void OnDestroy()

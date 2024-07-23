@@ -24,14 +24,15 @@ namespace Assets.Scripts
                 .WithTag("aaa")
                 .NonLazy();
 
-            binder.BuildDomain();
+            binder.BuildContext();
             //var test2 = container.Resolve<TestClass2>("aaa");
             //container.ResolveForInstance(test2);
             binder.InstantiateAndResolve(MonoTestObject);
-
             Debug.Log(binder.Resolve<ITestClass1>("aaa").Name);
+            binder.ResolveAllHierarchy(MonoTestObject.gameObject);
         }
     }
+
     public class TestClass1 : ITestClass1
     {
         protected string name = "class1";
