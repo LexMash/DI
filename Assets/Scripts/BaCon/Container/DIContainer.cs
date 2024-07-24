@@ -127,7 +127,7 @@ namespace BaCon
             if (!_cashedKeysMap.TryGetValue(type, out List<int> cashedKeys))
                 throw new TypeAccessException($"Collection of {type.FullName} not exists in cashed base");
 
-            var all = new List<T>();
+            List<T> all = new();
             var count = cashedKeys.Count;
 
             for ( int i = 0; i < count; i++)

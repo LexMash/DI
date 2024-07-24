@@ -8,7 +8,8 @@
         {
             this.resolver = resolver;
 
-            RegisteredType = resolver.RegisteredType;
+            RegisteredType = typeof(TTarget);
+            IsSingle = resolver.IsSingle;
         }
 
         public override TTarget Resolve()

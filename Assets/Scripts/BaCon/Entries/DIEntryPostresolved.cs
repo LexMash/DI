@@ -1,4 +1,6 @@
-﻿namespace BaCon
+﻿using UnityEngine.Rendering.VirtualTexturing;
+
+namespace BaCon
 {
     public sealed class DIEntryPostresolved<T> : DIEntryResolver<T>
     {
@@ -12,8 +14,8 @@
             this.container = container;
             this.entry = entry;
             this.tag = tag;
-
-            RegisteredType = entry.RegisteredType;
+            IsSingle = entry.IsSingle;
+            RegisteredType = typeof(T);
         }
 
         public override T Resolve()
