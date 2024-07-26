@@ -27,7 +27,7 @@ namespace BaCon
 
             if (contextPrefab == null)
             {
-                Debug.LogError("The project context could not be created.Check that the Resources folder contains the ProjectContext prefab");
+                Debug.LogWarning("The project context could not be created. Check that the Resources folder contains the ProjectContext prefab");
                 return;
             }
             

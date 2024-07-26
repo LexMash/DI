@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace BaCon
 {
-
     public class DIContainer : IDIBinder, IDIResolver, IDisposable
     {
         private readonly DIContainer parentContainer;
@@ -132,14 +131,14 @@ namespace BaCon
 
             for ( int i = 0; i < count; i++)
             {
-                var key = cashedKeys[i];
+                int key = cashedKeys[i];
 
                 if (resolutionsCache.Contains(key))
                     throw new Exception($"DI: Cyclic dependency for index {i} in cashed for type {type.FullName}. Check your cashed registrations");
 
                 resolutionsCache.Add(key);
 
-                var entry = entriesMap[key];
+                DIEntry entry = entriesMap[key];
                 var instance = entry.Resolve<T>();
                 all.Add(instance);
 
@@ -149,22 +148,18 @@ namespace BaCon
                 resolutionsCache.Remove(key);
             }
 
-            if (parentContainer != null) //или ограничиться текущим контекстом?
-            {
+            if (parentContainer != null)
                 all.AddRange(parentContainer.ResolveAll<T>());
-                return all;
-            }
 
             return all;
         }
 
-        public T ResolveForInstance<T>(T instance, string tag = null)
+        public void ResolveForInstance<T>(T instance, string tag = null)
         {
             var key = GetKey<T>(tag);
 
             MethodResolver<T> resolver = GetResolver<T>(key);
             resolver.Resolve(instance);
-            return instance;
         }
 
 #if UNITY_2017_3_OR_NEWER && NET_4_6
@@ -193,19 +188,35 @@ namespace BaCon
             if (instance == null)
                 throw new MissingComponentException($"Prefab {prefab.name} not contains component with type {typeof(T)}");
 
-            return ResolveForInstance(instance, tag);
+            ResolveForInstance(instance, tag);
+            return instance;
         }
 
         public T InstantiateAndResolve<T>(T prefab, string tag = null) where T : MonoBehaviour
         {
             var instance = GameObject.Instantiate(prefab);
-            return ResolveForInstance(instance, tag);
+            ResolveForInstance(instance, tag);
+            return instance;
         }
 
         public void BuildContext()
         {
             BindAll();
             NonLazy();
+        }
+
+        public bool TryAddToDisposable(object instance)
+        {
+            var disposable = instance as IDisposable;
+
+            if (disposable != null && !disposables.Contains(disposable))
+            {
+                disposables.Push(disposable);
+
+                return true;
+            }
+
+            return false;
         }
 
         public void Dispose()
@@ -260,20 +271,6 @@ namespace BaCon
             ResolveForInstance((dynamic)injectable, injectable.Tag);
         }
 #endif
-
-        private bool TryAddToDisposable<T>(T instance)
-        {
-            var disposable = instance as IDisposable;
-
-            if (disposable != null && !disposables.Contains(disposable))
-            {
-                disposables.Push(disposable);
-
-                return true;
-            }
-
-            return false;
-        }
 
         private void AddCashed(Type type, int key)
         {

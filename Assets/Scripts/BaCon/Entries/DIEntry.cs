@@ -49,7 +49,13 @@ namespace BaCon
         {
             if (IsSingle)
             {
-                return instance ??= factory(resolver);
+                if(instance == null)
+                {
+                    instance ??= factory(resolver);
+                    resolver.TryAddToDisposable(instance);
+                }
+
+                return instance;
             }
 
             return factory(resolver);
@@ -58,6 +64,7 @@ namespace BaCon
         public override void NonLazy()
         {
             instance = instance == null ? factory(resolver) : instance;
+            resolver.TryAddToDisposable(instance);
         }
     }
 }
