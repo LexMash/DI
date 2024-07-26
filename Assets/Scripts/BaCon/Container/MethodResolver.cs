@@ -4,31 +4,26 @@ namespace BaCon
 {
     public abstract class MethodResolver
     {
-        protected readonly DIContainer Container;
-
-        public MethodResolver(DIContainer container)
-        {
-            Container = container;
-        }
-
         public void Resolve<T>(T instance)
         {
             ((MethodResolver<T>)this).Resolve(instance);
         }
     }
 
-    public class MethodResolver<T> : MethodResolver
+    public sealed class MethodResolver<T> : MethodResolver
     {
+        private readonly IDIResolver resolver;
         private readonly Action<IDIResolver, T> process;
 
-        public MethodResolver(DIContainer container, Action<IDIResolver, T> process) : base(container)
+        public MethodResolver(IDIResolver resolver, Action<IDIResolver, T> process)
         {
+            this.resolver = resolver;
             this.process = process;
         }
 
         public void Resolve(T instance)
         {
-            process(Container, instance);
+            process(resolver, instance);
         }
     }
 }

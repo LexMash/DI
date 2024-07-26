@@ -1,7 +1,7 @@
 ﻿using BaCon;
 using System;
-using System.Reflection;
 using UnityEngine;
+using static UnityEditor.Progress;
 
 namespace Assets.Scripts
 {
@@ -13,13 +13,12 @@ namespace Assets.Scripts
         private void Start()
         {
             var test1 = new TestClass1();
-
             binder = new DIContainer();
 
-            binder.Bind<TestClass2, ITestClass1>().WithInjectionAction((c, i) => i.Set("1a")).WithTag("1").AsCashed();
-            binder.Bind<TestClass2, ITestClass1>().WithInjectionAction((c, i) => i.Set("2a")).WithTag("2").AsCashed();
-            binder.Bind<TestClass2, ITestClass1>().WithInjectionAction((c, i) => i.Set("3a")).WithTag("3").AsCashed();
-            binder.Bind<TestClass2, ITestClass1>().WithInjectionAction((c, i) => i.Set("4a")).WithTag("4").AsCashed();
+            binder.Bind<TestClass2, ITestClass1>().WithInjectionAction((c, i) => Debug.Log("1a")).WithTag("1").AsCashed().NonLazy();
+            binder.Bind<TestClass2, ITestClass1>().WithInjectionAction((c, i) => Debug.Log("2a")).WithTag("2").AsCashed().NonLazy();
+            binder.Bind<TestClass2, ITestClass1>().WithInjectionAction((c, i) => Debug.Log("3a")).WithTag("3").AsCashed().NonLazy();
+            binder.Bind<TestClass2, ITestClass1>().WithInjectionAction((c, i) => Debug.Log("4a")).WithTag("4").AsCashed().NonLazy();
 
             //binder.BindInjectionMethod<TestClass2>((r, i) => i.Set("injected test2"));
             //binder.BindInjectionMethod<MonoTestObject>((r, i) => i.Construct());
@@ -38,13 +37,14 @@ namespace Assets.Scripts
             //Debug.Log(binder.Resolve<ITestClass1>("aaa").Name);
             //binder.ResolveAllHierarchy(MonoTestObject.gameObject);
 
-            var list = binder.ResolveAll<ITestClass1>();
-            foreach (var item in list)
-            {
-                Debug.Log(item.Name);
-            }
+            //Debug.Log("resolving");
+            //var list = binder.ResolveAll<ITestClass1>();
+            //var list2 = binder.ResolveAll<ITestClass1>();
 
-            binder.Dispose();
+            //foreach (var item in list)
+            //{
+            //    Debug.Log(item.Name);
+            //}
         }
 
         private void OnDestroy()

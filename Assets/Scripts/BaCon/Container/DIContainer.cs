@@ -7,20 +7,20 @@ namespace BaCon
 
     public class DIContainer : IDIBinder, IDIResolver, IDisposable
     {
-        private readonly DIContainer _parentContainer;
+        private readonly DIContainer parentContainer;
 
-        private readonly Dictionary<int, DIEntry> _entriesMap = new();
-        private readonly Dictionary<int, MethodResolver> _resolverMap = new();
-        private readonly Dictionary<Type, List<int>> _cashedKeysMap = new();
-        private readonly Stack<IDisposable> _disposables = new();
+        private readonly Dictionary<int, DIEntry> entriesMap = new();
+        private readonly Dictionary<int, MethodResolver> resolverMap = new();
+        private readonly Dictionary<Type, List<int>> cashedKeysMap = new();
+        private readonly Stack<IDisposable> disposables = new();
 
-        private readonly HashSet<int> _resolutionsCache = new();      
-        private readonly Queue<Lazy> _lazyQueue = new();
-        private Queue<IDIEntryBuilder> _buildersQueue = new();
+        private readonly HashSet<int> resolutionsCache = new();      
+        private readonly Queue<Lazy> lazyQueue = new();
+        private Queue<IDIEntryBuilder> buildersQueue = new();
 
         public DIContainer(DIContainer parentContainer = null)
         {
-            _parentContainer = parentContainer;
+            this.parentContainer = parentContainer;
         }
 
         public static int GetKey<T>(string tag)
@@ -33,10 +33,10 @@ namespace BaCon
         {
             EntriesContainsCheck(key);
 
-            _entriesMap[key] = entry;
+            entriesMap[key] = entry;
 
             if (nonLazy)
-                _lazyQueue.Enqueue(entry);
+                lazyQueue.Enqueue(entry);
 
             if (asCashed)
                 AddCashed(entry.RegisteredType, key);
@@ -45,28 +45,28 @@ namespace BaCon
         public DIEntryBuilder<TCurrent> Bind<TCurrent>(Func<IDIResolver, TCurrent> factory = null) where TCurrent : new()
         {
             var builder = new DIFactoryBuilder<TCurrent>(this, factory);
-            _buildersQueue.Enqueue(builder);
+            buildersQueue.Enqueue(builder);
             return builder;
         }
 
         public DIEntryBuilder<TCurrent, TTarget> Bind<TCurrent, TTarget>(Func<IDIResolver, TCurrent> factory = null) where TCurrent : TTarget, new()
         {
             var builder = new DIFactoryBuilder<TCurrent, TTarget>(this, factory);
-            _buildersQueue.Enqueue(builder);
+            buildersQueue.Enqueue(builder);
             return builder;
         }
 
         public DIEntryBuilder<TCurrent> BindInstance<TCurrent>(TCurrent instance)
         {
             var builder = new DIInstanceBuilder<TCurrent>(this, instance);
-            _buildersQueue.Enqueue(builder);
+            buildersQueue.Enqueue(builder);
             return builder;
         }
 
         public DIEntryBuilder<TCurrent, TTarget> BindInstance<TCurrent, TTarget>(TCurrent instance) where TCurrent : TTarget
         {
             var builder = new DIInstanceBuilder<TCurrent, TTarget>(this, instance);
-            _buildersQueue.Enqueue(builder);
+            buildersQueue.Enqueue(builder);
             return builder;
         }
 
@@ -80,7 +80,7 @@ namespace BaCon
                 return;
             }
 
-            _resolverMap[key] = new MethodResolver<T>(this, method);
+            resolverMap[key] = new MethodResolver<T>(this, method);
         }
 
         public void BindInjectionMethod<T>(Action<IDIResolver, T> method)
@@ -92,14 +92,14 @@ namespace BaCon
         {
             var key = GetKey<T>(tag);
 
-            if (_resolutionsCache.Contains(key))
+            if (resolutionsCache.Contains(key))
                 throw new Exception($"DI: Cyclic dependency for tag {tag} and type {typeof(T).FullName}");
 
-            _resolutionsCache.Add(key);
+            resolutionsCache.Add(key);
 
             try
             {
-                if (_entriesMap.TryGetValue(key, out var diEntry))
+                if (entriesMap.TryGetValue(key, out var diEntry))
                 {
                     T resolved = diEntry.Resolve<T>();
 
@@ -109,12 +109,12 @@ namespace BaCon
                     return resolved;
                 }
 
-                if (_parentContainer != null)
-                    return _parentContainer.Resolve<T>(tag);
+                if (parentContainer != null)
+                    return parentContainer.Resolve<T>(tag);
             }
             finally
             {
-                _resolutionsCache.Remove(key);
+                resolutionsCache.Remove(key);
             }
 
             throw new Exception($"Couldn't find dependency for tag {tag} and type {typeof(T).FullName}");
@@ -124,7 +124,7 @@ namespace BaCon
         {
             var type = typeof(T);
             
-            if (!_cashedKeysMap.TryGetValue(type, out List<int> cashedKeys))
+            if (!cashedKeysMap.TryGetValue(type, out List<int> cashedKeys))
                 throw new TypeAccessException($"Collection of {type.FullName} not exists in cashed base");
 
             List<T> all = new();
@@ -134,24 +134,24 @@ namespace BaCon
             {
                 var key = cashedKeys[i];
 
-                if (_resolutionsCache.Contains(key))
+                if (resolutionsCache.Contains(key))
                     throw new Exception($"DI: Cyclic dependency for index {i} in cashed for type {type.FullName}. Check your cashed registrations");
 
-                _resolutionsCache.Add(key);
+                resolutionsCache.Add(key);
 
-                var entry = _entriesMap[key];
+                var entry = entriesMap[key];
                 var instance = entry.Resolve<T>();
                 all.Add(instance);
 
                 if (entry.IsSingle)
                     TryAddToDisposable(instance);
 
-                _resolutionsCache.Remove(key);
+                resolutionsCache.Remove(key);
             }
 
-            if (_parentContainer != null) //или ограничиться текущим контекстом?
+            if (parentContainer != null) //или ограничиться текущим контекстом?
             {
-                all.AddRange(_parentContainer.ResolveAll<T>());
+                all.AddRange(parentContainer.ResolveAll<T>());
                 return all;
             }
 
@@ -210,48 +210,48 @@ namespace BaCon
 
         public void Dispose()
         {
-            _entriesMap.Clear();
-            _resolverMap.Clear();
+            entriesMap.Clear();
+            resolverMap.Clear();
             
-            foreach(var cashed in _cashedKeysMap.Values)
+            foreach(var cashed in cashedKeysMap.Values)
                 cashed.Clear();
-            _cashedKeysMap.Clear();
+            cashedKeysMap.Clear();
 
-            _lazyQueue.Clear();
-            _resolutionsCache.Clear();
+            lazyQueue.Clear();
+            resolutionsCache.Clear();
 
-            var count = _disposables.Count;
-            while(_disposables.Count > 0)
+            var count = disposables.Count;
+            while(disposables.Count > 0)
             {
-                IDisposable disposable = _disposables.Pop();
+                IDisposable disposable = disposables.Pop();
                 disposable.Dispose();
             }
-            _disposables.Clear();
+            disposables.Clear();
         }
 
         private bool HasInjectionMethod(int key) 
-            => _resolverMap.ContainsKey(key);
+            => resolverMap.ContainsKey(key);
 
         private void BindAll()
         {
-            while (_buildersQueue.Count > 0)
+            while (buildersQueue.Count > 0)
             {
-                var builder = _buildersQueue.Dequeue();
+                var builder = buildersQueue.Dequeue();
                 builder.Bind();
             }
 
-            _buildersQueue.Clear();
+            buildersQueue.Clear();
         }
 
         private void NonLazy()
         {
-            while (_lazyQueue.Count > 0)
+            while (lazyQueue.Count > 0)
             {
-                var entry = _lazyQueue.Dequeue();
+                var entry = lazyQueue.Dequeue();
                 entry.NonLazy();
             }
 
-            _lazyQueue.Clear();
+            lazyQueue.Clear();
         }
 
 #if UNITY_2017_3_OR_NEWER && NET_4_6
@@ -265,9 +265,9 @@ namespace BaCon
         {
             var disposable = instance as IDisposable;
 
-            if (disposable != null && !_disposables.Contains(disposable))
+            if (disposable != null && !disposables.Contains(disposable))
             {
-                _disposables.Push(disposable);
+                disposables.Push(disposable);
 
                 return true;
             }
@@ -277,7 +277,7 @@ namespace BaCon
 
         private void AddCashed(Type type, int key)
         {
-            if (_cashedKeysMap.TryGetValue(type, out var keys))
+            if (cashedKeysMap.TryGetValue(type, out var keys))
             {
                 //for test
                 if (keys.Contains(key))
@@ -286,12 +286,12 @@ namespace BaCon
                 keys.Add(key);
             }
             else
-                _cashedKeysMap[type] = new List<int> { key };
+                cashedKeysMap[type] = new List<int> { key };
         }
 
         private void EntriesContainsCheck(int key)
         {
-            if (_entriesMap.TryGetValue(key, out DIEntry existed))
+            if (entriesMap.TryGetValue(key, out DIEntry existed))
                 throw new Exception($"Entry with this key {key} {existed.RegisteredType.Name}");
         }
 
@@ -299,7 +299,7 @@ namespace BaCon
         {
             MethodResolver<T> resolver = null;
 
-            if (_resolverMap.TryGetValue(key, out MethodResolver registered))
+            if (resolverMap.TryGetValue(key, out MethodResolver registered))
             {
                 resolver = (MethodResolver<T>)registered;
             }

@@ -1,17 +1,15 @@
-﻿using UnityEngine.Rendering.VirtualTexturing;
-
-namespace BaCon
+﻿namespace BaCon
 {
     public sealed class DIEntryPostresolved<T> : DIEntryResolver<T>
     {
-        private readonly DIContainer container;
+        private readonly IDIResolver resolver;
         private readonly DIEntry<T> entry;
         private readonly string tag;
-        private bool isResolved;
+        private bool postInjectionPerformed;
 
-        public DIEntryPostresolved(DIContainer container, DIEntry<T> entry, string tag)
+        public DIEntryPostresolved(IDIResolver resolver, DIEntry<T> entry, string tag)
         {
-            this.container = container;
+            this.resolver = resolver;
             this.entry = entry;
             this.tag = tag;
             IsSingle = entry.IsSingle;
@@ -20,32 +18,29 @@ namespace BaCon
 
         public override T Resolve()
         {
-            var resolved = entry.Resolve();
+            var instance = entry.Resolve();
 
             if (entry.IsSingle)
             {
-                if (!isResolved)
+                if (!postInjectionPerformed)
                 {
-                    container.ResolveForInstance(resolved, tag);
-                    isResolved = true;                  
+                    resolver.ResolveForInstance(instance, tag);
+                    postInjectionPerformed = true;                  
                 }
 
-                return resolved;
+                return instance;
             }
 
-            container.ResolveForInstance(resolved, tag);
-            return resolved;
+            resolver.ResolveForInstance(instance, tag);
+            return instance;
         }
 
         public override void NonLazy()
         {
-            if (entry.IsSingle)
-            {
-                entry.NonLazy();
-                var resolved = entry.Resolve();
-                container.ResolveForInstance(resolved, tag);
-                isResolved = true;
-            }
+            entry.NonLazy();
+            var instance = entry.Resolve();
+            resolver.ResolveForInstance(instance, tag);
+            postInjectionPerformed = true;
         }
     }
 }

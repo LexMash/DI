@@ -17,7 +17,6 @@ namespace BaCon
     {
         public Type RegisteredType { get; protected set; }
         public bool IsSingle { get; protected set; }
-        protected DIContainer Container { get; }
         
         public T Resolve<T>()
         {
@@ -27,20 +26,22 @@ namespace BaCon
 
     public class DIEntry<T> : DIEntryResolver<T>
     {
-        private Func<DIContainer, T> Factory { get; }
-        private T _instance;
+        private readonly IDIResolver resolver;
+        private readonly Func<IDIResolver, T> factory;
+        private T instance;
 
-        public DIEntry(DIContainer container, Func<DIContainer, T> factory, bool isSingle = false)
+        public DIEntry(IDIResolver resolver, Func<IDIResolver, T> factory, bool isSingle = false)
         {
-            Factory = factory;
+            this.resolver = resolver;
+            this.factory = factory;
             IsSingle = isSingle;
 
             RegisteredType = typeof(T);
         }
 
-        public DIEntry(T value)
+        public DIEntry(T instance)
         {
-            _instance = value;
+            this.instance = instance;
             IsSingle = true;
         }
 
@@ -48,18 +49,15 @@ namespace BaCon
         {
             if (IsSingle)
             {
-                return _instance ??= Factory(Container);
+                return instance ??= factory(resolver);
             }
 
-            return Factory(Container);
+            return factory(resolver);
         }
 
         public override void NonLazy()
         {
-            if (IsSingle)
-            {
-                _instance = _instance == null ? Factory(Container) : _instance;
-            }
+            instance = instance == null ? factory(resolver) : instance;
         }
     }
 }

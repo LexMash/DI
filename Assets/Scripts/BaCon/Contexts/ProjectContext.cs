@@ -19,10 +19,12 @@ namespace BaCon
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
 
+            OnSceneLoaded(SceneManager.GetActiveScene(), LoadSceneMode.Single);
+
             DontDestroyOnLoad(this);
         }
 
-        public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {            
             currentSceneContext = GetSceneContext(scene);
             currentSceneContext.InitContext(container);
@@ -67,6 +69,7 @@ namespace BaCon
             container.Dispose();
             container = null;
             currentSceneContext = null;
+
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
         }

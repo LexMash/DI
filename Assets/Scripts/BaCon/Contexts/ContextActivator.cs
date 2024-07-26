@@ -18,21 +18,20 @@ namespace BaCon
         {
             SceneManager.sceneLoaded -= InitializeContext;
 
-            context = CreateContext();
-            context?.OnSceneLoaded(scene, mode);
+            CreateContext();
         }
 
-        private static ProjectContext CreateContext()
+        private static void CreateContext()
         {
             var contextPrefab = Resources.Load<ProjectContext>(ProjectContextLoadPath);
 
             if (contextPrefab == null)
             {
                 Debug.LogError("The project context could not be created.Check that the Resources folder contains the ProjectContext prefab");
-                return null;
+                return;
             }
             
-            return GameObject.Instantiate(contextPrefab);
+            GameObject.Instantiate(contextPrefab);
         }
     }
 }
