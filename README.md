@@ -93,3 +93,56 @@ binder.BindInjectionMethod<Mono>("tag1", (resolver, instance) => instance.Constr
 binder.BindInjectionMethod<Mono>("tag2", (resolver, instance) => instance.Construct(resolver.Resolve<IMonoDependency2));
 binder.BindInjectionMethod<Mono>((resolver, instance) => instance.Construct(resolver.Resolve<IMonoDependency3));
 ```
+
+### Instance and resolving for MonoBehaviour derived and gameobjects.
+Once you register a method for a class, you can use instance creation and resolving for that mono-derived class.
+```csharp
+//inside factory - method create
+public IMono Create(){
+    return resolver.InstantiateAndResolve<Mono>(gameobject);
+}
+
+public IMono Create(){
+    return resolver.InstantiateAndResolve<Mono>(MonoPrefab) //prefab with Mono Component
+}
+```
+
+### Resolving for all hierarchy of components gameobject (if use API Compatibility Level .Net Framework)
+A monoderived class must implement the IInjectable interface.
+You must specify a tag if the injection method is registered with a tag. If it is not present, then you must return an string.Empty.
+After all you can use methods ResolveAllHierarchy
+```csharp
+public class MonoDerived : MonoBehaviour, IInjectable{
+    public string Tag => "myTag"
+}
+
+ResolveAllHierarchy<MonoDerived>(monoDerivedInstance); //generic version
+ResolveAllHierarchy(monoDerivedInstance.gameObject); // for gameobjects
+```
+
+### Non Lazy
+##### If a class is created with the NonLazy mark, it is automatically marked as a singleton!
+By default, all objects are created on request. If you want the object to be created immediately after registering all dependencies, then use the NonLazy method
+```csharp
+binder.Bind<Foo>().NonLazy();
+binder.BindInstance<Mono, IMono>().WithInjectionAction((resolver, instance) => instance.Construct(resolver.Resolve<IMonoDependency>)).NonLazy();
+```
+
+### Contexts
+There are two contexts - the project context and the scene context. There can be one context for each scene.
+The project context is created by default and should not be modified in any way except for adding DIInstaller derived.
+
+### Resolving for collections of cashed instances
+You can get a list of objects of a particular class or interface if you use the AsCashed method during registration
+```csharp
+binder.Bind<TestClass1, ITestClass1>().WithTag("1").AsCashed().NonLazy();
+binder.Bind<TestClass2, ITestClass1>().WithInjectionAction((c, i) => Debug.Log("2a")).AsCashed().WithTag("2");
+binder.Bind<TestClass3, ITestClass1>().WithTag("3").AsCashed().WithInjectionAction((resolver, instance) => instance.Construct(resolver.Resolve<TestClass2));
+binder.Bind<TestClass4, ITestClass1>((resolver) => new TestClass4(resolver.Resolve<TestClass1>()).WithTag("4").AsCashed();
+
+//after
+binder.Bind<TestClassHandler>((resolver) => new TestClassHandler(resolver.ResolveAll<ITestClass1>()));
+```
+A read-only list of all registered objects with the given interface or class will be injected.
+#### If a class is created with the AsCashed mark, it is automatically marked as a singleton!
+#### Be sure to use tag to distinguish objects. Otherwise, there will be a registration error.
