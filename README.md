@@ -40,7 +40,7 @@ binder.Bind<Foo>((resolver) => new Foo(resolver.Resolve<FooDependency>());
 binder.Bind<InstanceType, TargetType>(Func(IDIResolver, newInstance) factory);
 binder.Bind<Foo, IFoo>((resolver) => new Foo(resolver.Resolve<FooDependency>());
 ```
-##### You can omit the factory, and then the type will use the default constructor
+#### You can omit the factory, and then the type will use the default constructor
 ```csharp
 binder.Bind<Foo>(); // var foo = r.Resolve<Foo>() == var foo = new Foo();
 ```
@@ -87,11 +87,22 @@ public IMono Create(){
 }
 ```
 
-##### You can register methods separately from factories and object instances.
+#### You can register methods separately from factories and object instances.
 ```csharp
 binder.BindInjectionMethod<Mono>("tag1", (resolver, instance) => instance.Construct(resolver.Resolve<IMonoDependency1));
 binder.BindInjectionMethod<Mono>("tag2", (resolver, instance) => instance.Construct(resolver.Resolve<IMonoDependency2));
 binder.BindInjectionMethod<Mono>((resolver, instance) => instance.Construct(resolver.Resolve<IMonoDependency3));
+
+//inside factory - method create
+public IMono Create(){
+    var instance = Instantiate<Mono>(prefab);
+    resolver.ResolveForInstance<Mono>(instance);
+    //or
+    resolver.ResolveForInstance<Mono>("tag1",instance);
+    //or
+    resolver.ResolveForInstance<Mono>("tag2",instance);
+    return instance;
+}
 ```
 
 ### Instance and resolving for MonoBehaviour derived and gameobjects.
@@ -121,7 +132,7 @@ ResolveAllHierarchy(monoDerivedInstance.gameObject); // for gameobjects
 ```
 
 ### Non Lazy
-##### If a class is created with the NonLazy mark, it is automatically marked as a singleton!
+#### If a class is created with the NonLazy mark, it is automatically marked as a singleton!
 By default, all objects are created on request. If you want the object to be created immediately after registering all dependencies, then use the NonLazy method
 ```csharp
 binder.Bind<Foo>().NonLazy();
