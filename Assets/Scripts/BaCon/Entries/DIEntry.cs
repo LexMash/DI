@@ -3,7 +3,7 @@
 namespace BaCon
 {
 
-#if UNITY_2017_3_OR_NEWER && NET_4_6
+#if UNITY_2017_3_OR_NEWER && NET_4_6 && PLATFORM_SUPPORTS_MONO
     /// <summary>
     /// Interface ONLY for deriving MonoBehaviour classes and injecting into its entire hierarchy.
     /// </summary>
@@ -39,8 +39,9 @@ namespace BaCon
             RegisteredType = typeof(T);
         }
 
-        public DIEntry(T instance)
+        public DIEntry(IDIResolver resolver, T instance)
         {
+            this.resolver = resolver;
             this.instance = instance;
             IsSingle = true;
         }

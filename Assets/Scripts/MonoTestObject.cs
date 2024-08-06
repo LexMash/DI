@@ -9,6 +9,7 @@ namespace Assets.Scripts
 
         public void Construct()
         {
+            gameObject.SetActive(true);
             Debug.Log("Construct");
         }
     }

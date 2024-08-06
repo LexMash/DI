@@ -162,7 +162,7 @@ namespace BaCon
             resolver.Resolve(instance);
         }
 
-#if UNITY_2017_3_OR_NEWER && NET_4_6
+#if ENABLE_MONO && UNITY_2017_3_OR_NEWER && NET_4_6
         public void ResolveAllHierarchy<T>(T instance) where T : MonoBehaviour
         {
             ResolveAllHierarchy(instance.gameObject);

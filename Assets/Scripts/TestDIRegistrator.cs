@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class TestDIRegistrator : DIInstaller
 {
-    [SerializeField] private MonoTestObject monoTestObject;
+    [SerializeField] private MonoTestFactory factory;
 
     public override void InstallBindings(IDIBinder binder)
     {
@@ -12,16 +12,14 @@ public class TestDIRegistrator : DIInstaller
             .WithInjectionAction((resolver, instance) => instance.SetDepenecy(resolver.Resolve<ITestClass1>()))
             .WithTag("aaa");
 
-        binder.BindInstance(monoTestObject)
-            .WithInjectionAction((r, instance) => instance.Construct())
-            .NonLazy();
+        binder.BindInjectionMethod<MonoTestObject>((r, instance) => instance.Construct());
 
         binder.BindInstance<TestClass2, ITestClass1>(new TestClass2())
             .WithInjectionAction((r, i) => Debug.Log("uahahah"))
             .AsSingle()
-            .WithTag("aaa")
-            .NonLazy();
+            .WithTag("aaa");
+            //NonLazy();
 
-        var test = new Test();
+        binder.BindInstance(factory).WithInjectionAction((resolver, instance) => instance.Construct(resolver)).NonLazy();
     }
 }

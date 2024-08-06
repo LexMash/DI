@@ -11,7 +11,7 @@ namespace BaCon
         T InstantiateAndResolve<T>(T prefab, string tag = null) where T : MonoBehaviour;
         void ResolveForInstance<T>(T instance, string tag = null);
 
-#if UNITY_2017_3_OR_NEWER && NET_4_6
+#if ENABLE_MONO && UNITY_2017_3_OR_NEWER && NET_4_6 
         void ResolveAllHierarchy<T>(T instance) where T : MonoBehaviour;
         void ResolveAllHierarchy(GameObject gameObject);
 #endif

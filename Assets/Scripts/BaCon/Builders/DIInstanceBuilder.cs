@@ -11,7 +11,7 @@
         }
 
         protected override DIEntry<TCurrent> GetEntry()
-            => new DIEntry<TCurrent>(instance);
+            => new DIEntry<TCurrent>(Container, instance);
     }
 
     public sealed class DIInstanceBuilder<TCurrent, TTarget> : DIEntryBuilder<TCurrent, TTarget> where TCurrent : TTarget
@@ -25,6 +25,6 @@
         }
 
         protected override DIEntry<TCurrent> GetEntry() 
-            => new DIEntry<TCurrent>(instance);
+            => new DIEntry<TCurrent>(Container, instance);
     }
 }
